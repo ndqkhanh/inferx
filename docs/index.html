@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>InferX — Distributed AI Inference Gateway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-base: #090d14;
+  --bg-surface: #0e1420;
+  --bg-card: #131b27;
+  --bg-card-hover: #182030;
+  --accent: #7C3AED;
+  --accent-bright: #a78bfa;
+  --accent2: #0ea5e9;
+  --accent2-bright: #38bdf8;
+  --text-primary: #e8edf5;
+  --text-secondary: #8a9ab8;
+  --border: rgba(124,58,237,0.2);
+  --border-subtle: rgba(138,154,184,0.1);
+  --glow-accent: rgba(124,58,237,0.15);
+  --glow-accent2: rgba(14,165,233,0.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg-base);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg-base)}
+::-webkit-scrollbar-thumb{background:var(--accent);border-radius:3px}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:16px 40px;background:rgba(9,13,20,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border-subtle)}
+.nav-logo{font-family:'DM Serif Display',serif;font-size:22px;color:var(--text-primary);text-decoration:none}
+.nav-logo em{font-style:italic;color:var(--accent-bright)}
+.nav-links{display:flex;gap:32px;list-style:none}
+.nav-links a{color:var(--text-secondary);text-decoration:none;font-size:14px;font-weight:500;letter-spacing:.02em;transition:color .2s}
+.nav-links a:hover{color:var(--text-primary)}
+
+/* HERO */
+#hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:100px 24px 80px;position:relative;overflow:hidden}
+.hero-glow{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
+.hero-glow-1{width:700px;height:700px;background:var(--glow-accent);top:-120px;left:50%;transform:translateX(-50%)}
+.hero-glow-2{width:450px;height:450px;background:var(--glow-accent2);bottom:0;right:-120px}
+.hero-badge{position:relative;display:inline-flex;align-items:center;gap:8px;background:rgba(124,58,237,0.12);border:1px solid var(--border);border-radius:100px;padding:6px 18px;font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--accent-bright);margin-bottom:36px}
+.hero-badge::before{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent-bright);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.75)}}
+h1{position:relative;font-family:'DM Serif Display',serif;font-size:clamp(60px,9vw,104px);font-weight:400;line-height:1.03;letter-spacing:-.025em;margin-bottom:24px}
+h1 em{font-style:italic;color:var(--accent-bright)}
+.hero-subtitle{position:relative;font-size:clamp(16px,2.5vw,20px);color:var(--text-secondary);max-width:580px;margin:0 auto 52px;font-weight:300;line-height:1.7}
+.hero-stats{position:relative;display:flex;gap:48px;flex-wrap:wrap;justify-content:center}
+.stat{display:flex;flex-direction:column;align-items:center;gap:4px}
+.stat-value{font-family:'JetBrains Mono',monospace;font-size:36px;font-weight:600;color:var(--accent-bright);line-height:1}
+.stat-label{font-size:12px;color:var(--text-secondary);font-weight:500;text-transform:uppercase;letter-spacing:.1em}
+.stat-sep{width:1px;height:40px;background:var(--border-subtle);align-self:center}
+
+/* SECTIONS */
+.sec{padding:100px 24px;max-width:1200px;margin:0 auto}
+.section-label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-bright);text-transform:uppercase;letter-spacing:.14em;margin-bottom:12px}
+h2{font-family:'DM Serif Display',serif;font-size:clamp(34px,5vw,56px);font-weight:400;line-height:1.1;margin-bottom:16px}
+.section-desc{color:var(--text-secondary);font-size:17px;max-width:560px;margin-bottom:56px;line-height:1.7}
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* DEMO SECTION */
+.demo-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:40px;position:relative;overflow:hidden}
+.demo-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.model-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.model-card{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:12px;padding:18px;transition:border-color .3s,box-shadow .3s}
+.model-card.winner{border-color:var(--accent);box-shadow:0 0 24px var(--glow-accent)}
+.model-card.winner .mc-name{color:var(--accent-bright)}
+.mc-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;margin-bottom:3px}
+.mc-true{font-size:11px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;margin-bottom:12px}
+.bar-wrap{height:7px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;margin-bottom:12px}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.mc-stat{display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-bottom:3px;font-family:'JetBrains Mono',monospace}
+.mc-stat b{color:var(--accent-bright);font-weight:600}
+.mc-sample{font-family:'JetBrains Mono',monospace;font-size:11px;height:16px;margin-top:8px;color:var(--text-secondary)}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-panel{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:12px;padding:16px}
+.chart-label{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-secondary);margin-bottom:12px;font-weight:500}
+canvas{width:100%;display:block;border-radius:6px}
+.controls{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#6d28d9;box-shadow:0 0 18px var(--glow-accent)}
+.btn-secondary{background:transparent;color:var(--text-primary);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg-card-hover);border-color:var(--accent)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border-color:var(--border-subtle)}
+.btn-ghost:hover{color:var(--text-primary);border-color:var(--border)}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+.log-box{background:var(--bg-base);border:1px solid var(--border-subtle);border-radius:8px;padding:14px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-secondary);height:110px;overflow-y:auto;margin-top:16px;line-height:1.6}
+.log-box::-webkit-scrollbar{width:4px}
+.log-win{color:var(--accent-bright)}
+.log-info{color:var(--accent2-bright)}
+
+/* ARCHITECTURE */
+.arch-wrap{display:flex;align-items:center;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:48px}
+.arch-node{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;text-align:center;min-width:110px;transition:border-color .3s,box-shadow .3s}
+.arch-node:hover{border-color:var(--accent-bright);box-shadow:0 0 20px var(--glow-accent)}
+.arch-icon{font-size:22px;margin-bottom:6px}
+.arch-name{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-primary)}
+.arch-sub{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.arch-arrow{color:var(--accent);font-size:18px;opacity:.7;flex-shrink:0}
+.arch-group{display:flex;flex-direction:column;gap:8px;background:rgba(124,58,237,0.04);border:1px solid var(--border);border-radius:16px;padding:14px}
+.arch-group-lbl{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--accent-bright);text-transform:uppercase;letter-spacing:.12em;text-align:center;margin-bottom:4px}
+
+/* ALGO CARDS */
+.algo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+.algo-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;padding:24px;transition:border-color .3s,transform .3s,box-shadow .3s;cursor:default}
+.algo-card:hover{border-color:var(--accent);transform:translateY(-3px);box-shadow:0 8px 32px var(--glow-accent)}
+.algo-hdr{display:flex;align-items:flex-start;gap:14px;margin-bottom:10px}
+.algo-icon{font-size:26px;line-height:1;flex-shrink:0;margin-top:2px}
+.algo-name{font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+.algo-desc{font-size:14px;color:var(--text-secondary);line-height:1.55}
+.algo-ref{display:inline-block;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent2-bright);background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.2);border-radius:4px;padding:3px 8px}
+
+/* MODULES */
+.module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.module-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:20px;transition:border-color .25s,box-shadow .25s}
+.module-card:hover{border-color:var(--accent2);box-shadow:0 4px 18px var(--glow-accent2)}
+.mod-icon{font-size:22px;margin-bottom:10px}
+.mod-name{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text-primary);margin-bottom:4px}
+.mod-pkg{font-size:11px;color:var(--text-secondary);margin-bottom:10px}
+.mod-tests{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--accent2-bright);font-weight:600}
+
+/* FOOTER */
+footer{border-top:1px solid var(--border-subtle);padding:56px 24px;text-align:center}
+.foot-inner{max-width:580px;margin:0 auto}
+.foot-logo{font-family:'DM Serif Display',serif;font-size:30px;margin-bottom:12px}
+.foot-logo em{color:var(--accent-bright);font-style:italic}
+.foot-tag{color:var(--text-secondary);font-size:14px;margin-bottom:28px}
+.foot-links{display:flex;gap:28px;justify-content:center;margin-bottom:32px;flex-wrap:wrap}
+.foot-links a{color:var(--text-secondary);text-decoration:none;font-size:14px;display:flex;align-items:center;gap:6px;transition:color .2s}
+.foot-links a:hover{color:var(--accent-bright)}
+.foot-copy{font-size:13px;color:var(--text-secondary);opacity:.5}
+
+/* RESPONSIVE */
+@media(max-width:900px){.charts-row{grid-template-columns:1fr}}
+@media(max-width:700px){
+  nav{padding:14px 20px}
+  .nav-links{display:none}
+  .model-cols{grid-template-columns:1fr}
+  .demo-wrap{padding:24px 18px}
+  .arch-group{flex-direction:row;flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="#hero">Infer<em>X</em></a>
+  <ul class="nav-links">
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#algorithms">Algorithms</a></li>
+    <li><a href="#modules">Modules</a></li>
+    <li><a href="https://github.com/khanhnguyen/inferx" target="_blank">GitHub ↗</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-glow hero-glow-1"></div>
+  <div class="hero-glow hero-glow-2"></div>
+  <div class="hero-badge">v1.0.0 &nbsp;·&nbsp; Java 21 &nbsp;·&nbsp; Zero Dependencies</div>
+  <h1>Infer<em>X</em></h1>
+  <p class="hero-subtitle">Distributed AI Inference Gateway with Stream Processing — built from first principles, no frameworks.</p>
+  <div class="hero-stats">
+    <div class="stat"><span class="stat-value">10</span><span class="stat-label">Modules</span></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><span class="stat-value">190</span><span class="stat-label">Tests</span></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><span class="stat-value">10</span><span class="stat-label">Algorithms</span></div>
+    <div class="stat-sep"></div>
+    <div class="stat"><span class="stat-value">0</span><span class="stat-label">Dependencies</span></div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- THOMPSON SAMPLING DEMO -->
+<div class="sec" id="demo">
+  <div class="section-label">Interactive Demo</div>
+  <h2>Thompson Sampling Router</h2>
+  <p class="section-desc">Watch the Bayesian bandit algorithm learn which endpoint performs best in real time. Beta posteriors are updated after every outcome — no wasted exploration.</p>
+
+  <div class="demo-wrap reveal">
+    <!-- Model columns rendered by JS -->
+    <div class="model-cols" id="modelCols"></div>
+
+    <div class="charts-row">
+      <div class="chart-panel">
+        <div class="chart-label">// routing distribution (last 200 requests)</div>
+        <canvas id="canvasRouting" height="150"></canvas>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-label">// beta posterior means over time</div>
+        <canvas id="canvasConverge" height="150"></canvas>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary" id="btnRoute">&#9654; Route Request</button>
+      <button class="btn btn-secondary" id="btnAuto">&#9654;&#9654; Auto-Run 100</button>
+      <button class="btn btn-ghost" id="btnReset">&#8635; Reset</button>
+    </div>
+
+    <div class="log-box" id="logBox">
+      <div class="log-info">// Thompson Sampling initialized — 3 endpoints, Beta(1,1) priors. Click Route Request.</div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ARCHITECTURE -->
+<div class="sec" id="architecture">
+  <div class="section-label">System Design</div>
+  <h2>Architecture</h2>
+  <p class="section-desc">Layered pipeline from edge clients through intelligent adaptive routing to backend inference engines.</p>
+
+  <div class="arch-wrap reveal">
+    <div class="arch-node">
+      <div class="arch-icon">&#128100;</div>
+      <div class="arch-name">Clients</div>
+      <div class="arch-sub">HTTP / gRPC</div>
+    </div>
+    <div class="arch-arrow">&#10142;</div>
+    <div class="arch-node">
+      <div class="arch-icon">&#127760;</div>
+      <div class="arch-name">Gateway</div>
+      <div class="arch-sub">Ingress + Auth</div>
+    </div>
+    <div class="arch-arrow">&#10142;</div>
+    <div class="arch-group">
+      <div class="arch-group-lbl">Routing Layer</div>
+      <div class="arch-node" style="min-width:0">
+        <div class="arch-icon">&#127757;</div>
+        <div class="arch-name">Router</div>
+        <div class="arch-sub">Thompson / UCB</div>
+      </div>
+      <div class="arch-node" style="min-width:0">
+        <div class="arch-icon">&#128260;</div>
+        <div class="arch-name">Batcher</div>
+        <div class="arch-sub">Dynamic windows</div>
+      </div>
+      <div class="arch-node" style="min-width:0">
+        <div class="arch-icon">&#128197;</div>
+        <div class="arch-name">Scheduler</div>
+        <div class="arch-sub">Priority queues</div>
+      </div>
+    </div>
+    <div class="arch-arrow">&#10142;</div>
+    <div class="arch-group">
+      <div class="arch-group-lbl">Processing Layer</div>
+      <div class="arch-node" style="min-width:0">
+        <div class="arch-icon">&#128007;</div>
+        <div class="arch-name">Stream</div>
+        <div class="arch-sub">SSE / WebSocket</div>
+      </div>
+      <div class="arch-node" style="min-width:0">
+        <div class="arch-icon">&#128202;</div>
+        <div class="arch-name">Feature</div>
+        <div class="arch-sub">Extraction pipeline</div>
+      </div>
+      <div class="arch-node" style="min-width:0">
+        <div class="arch-icon">&#128268;</div>
+        <div class="arch-name">Metrics</div>
+        <div class="arch-sub">P50 / P95 / P99</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ALGORITHMS -->
+<div class="sec" id="algorithms">
+  <div class="section-label">Core Algorithms</div>
+  <h2>10 Algorithms</h2>
+  <p class="section-desc">Every algorithm implemented from first principles — no external libraries, hand-tuned for low-latency JVM execution.</p>
+  <div class="algo-grid" id="algoGrid"></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- MODULES -->
+<div class="sec" id="modules">
+  <div class="section-label">Codebase</div>
+  <h2>10 Modules</h2>
+  <p class="section-desc">Pure Java 21 — virtual threads, structured concurrency, sealed interfaces, records. 190 tests total.</p>
+  <div class="module-grid" id="moduleGrid"></div>
+</div>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-inner">
+    <div class="foot-logo">Infer<em>X</em></div>
+    <div class="foot-tag">Distributed AI Inference Gateway — Built from scratch in Java 21</div>
+    <div class="foot-links">
+      <a href="https://github.com/khanhnguyen/inferx" target="_blank">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
+        GitHub
+      </a>
+      <a href="#demo">Live Demo</a>
+      <a href="#algorithms">Algorithms</a>
+      <a href="#modules">Modules</a>
+    </div>
+    <div class="foot-copy">&copy; 2024 InferX &middot; Java 21 &middot; Virtual Threads &middot; Zero Dependencies</div>
+  </div>
+</footer>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const MODELS = [
+  { id:'A', name:'Model A', trueRate:.90, color:'#7C3AED', alpha:1, beta:1, requests:0, successes:0 },
+  { id:'B', name:'Model B', trueRate:.50, color:'#0ea5e9', alpha:1, beta:1, requests:0, successes:0 },
+  { id:'C', name:'Model C', trueRate:.10, color:'#f59e0b', alpha:1, beta:1, requests:0, successes:0 },
+];
+
+const ALGORITHMS = [
+  { icon:'🎲', name:'Thompson Sampling',        desc:'Bayesian bandit routing via Beta posterior sampling — optimal exploration-exploitation balance with no tuning required.',   ref:'Thompson (1933) · Chapelle & Li, NeurIPS 2011' },
+  { icon:'📈', name:'UCB1',                      desc:'Upper Confidence Bound selects the arm with the highest upper bound, balancing empirical reward with visitation confidence.',  ref:'Auer, Cesa-Bianchi & Fischer, 2002 · ML Journal' },
+  { icon:'⚡', name:'Token Bucket',              desc:'Rate limiting with configurable burst capacity allowing short traffic spikes while enforcing long-term throughput ceilings.', ref:'RFC 2698 · Dual Token Bucket' },
+  { icon:'🔄', name:'Weighted Round Robin',      desc:'Distributes load proportionally across heterogeneous backend tiers based on declared weight capacity ratios.',               ref:'Cisco WRR · RFC 3127' },
+  { icon:'📊', name:'Exponential Moving Average',desc:'Adaptive latency estimation with configurable decay factor — low memory, resistant to outliers for EWMA percentiles.',       ref:'Roberts (1959) · NIST Handbook' },
+  { icon:'🌊', name:'Sliding Window Counter',    desc:'Fixed and sliding window rate limiters with O(1) amortized cost per request using circular buffer arithmetic.',              ref:'Tanenbaum (2003) · Computer Networks 5e' },
+  { icon:'🗂️', name:'Min-Heap Scheduler',        desc:'Priority-based request scheduling with deadline-driven eviction using binary min-heap — O(log n) enqueue and dequeue.',     ref:'Williams (1964) · CACM Algorithm 232' },
+  { icon:'🔀', name:'Consistent Hashing',        desc:'Virtual nodes on a hash ring for minimal request re-routing when backend endpoints join or leave the cluster.',              ref:'Karger et al. (1997) · STOC, ACM' },
+  { icon:'📦', name:'Dynamic Batching',          desc:'Adaptive micro-batch formation maximizing GPU utilization by coalescing requests within configurable latency SLO budgets.',  ref:'Clipper: Crankshaw et al., NSDI 2017' },
+  { icon:'🧮', name:'Reservoir Sampling',        desc:'Uniform random sampling over unbounded streaming request logs with bounded O(k) memory — Vitter\'s Algorithm R.',           ref:'Vitter (1985) · ACM TOMS Vol 11' },
+];
+
+const MODULES = [
+  { icon:'🌐', name:'gateway',   pkg:'com.inferx.gateway',   tests:22 },
+  { icon:'🔀', name:'router',    pkg:'com.inferx.router',    tests:28 },
+  { icon:'📦', name:'batcher',   pkg:'com.inferx.batcher',   tests:18 },
+  { icon:'📅', name:'scheduler', pkg:'com.inferx.scheduler', tests:20 },
+  { icon:'🌊', name:'stream',    pkg:'com.inferx.stream',    tests:16 },
+  { icon:'🧠', name:'feature',   pkg:'com.inferx.feature',   tests:22 },
+  { icon:'📊', name:'metrics',   pkg:'com.inferx.metrics',   tests:18 },
+  { icon:'🔒', name:'ratelimit', pkg:'com.inferx.ratelimit', tests:20 },
+  { icon:'⚙️', name:'config',    pkg:'com.inferx.config',    tests:14 },
+  { icon:'🔧', name:'common',    pkg:'com.inferx.common',    tests:12 },
+];
+
+// ── BETA SAMPLING (Marsaglia-Tsang Gamma method) ───────────────────────────
+let _spare = null;
+function normalSample() {
+  if (_spare !== null) { const s = _spare; _spare = null; return s; }
+  let u, v, s;
+  do { u = Math.random()*2-1; v = Math.random()*2-1; s = u*u+v*v; } while (s >= 1 || s === 0);
+  const m = Math.sqrt(-2*Math.log(s)/s);
+  _spare = v*m; return u*m;
+}
+function gammaSample(shape) {
+  if (shape < 1) return gammaSample(1+shape) * Math.pow(Math.random(), 1/shape);
+  const d = shape - 1/3, c = 1/Math.sqrt(9*d);
+  for (;;) {
+    let x, v;
+    do { x = normalSample(); v = 1+c*x; } while (v <= 0);
+    v = v*v*v;
+    const u = Math.random();
+    if (u < 1 - 0.0331*(x*x)*(x*x)) return d*v;
+    if (Math.log(u) < 0.5*x*x + d*(1-v+Math.log(v))) return d*v;
+  }
+}
+function betaSample(a, b) {
+  const g1 = gammaSample(a), g2 = gammaSample(b);
+  return g1/(g1+g2);
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let routeHistory  = [];   // model index per request (last 200)
+let convergHist   = [];   // [{a,b,c}] means over time (last 150)
+let totalReqs     = 0;
+let autoRunning   = false;
+
+// ── RENDER MODEL COLUMNS ──────────────────────────────────────────────────────
+function renderCols() {
+  document.getElementById('modelCols').innerHTML = MODELS.map((m,i) => {
+    const mean = m.alpha/(m.alpha+m.beta);
+    return `<div class="model-card" id="mc-${i}">
+      <div class="mc-name">${m.name}</div>
+      <div class="mc-true">true success rate: ${(m.trueRate*100).toFixed(0)}%</div>
+      <div class="bar-wrap"><div class="bar-fill" id="bar-${i}" style="width:${mean*100}%;background:${m.color}"></div></div>
+      <div class="mc-stat"><span>requests routed</span><b id="rq-${i}">${m.requests}</b></div>
+      <div class="mc-stat"><span>successes</span><b id="sc-${i}">${m.successes}</b></div>
+      <div class="mc-stat"><span>Beta mean</span><b id="mn-${i}">${(mean*100).toFixed(1)}%</b></div>
+      <div class="mc-stat"><span>&alpha; / &beta;</span><b id="ab-${i}">${m.alpha} / ${m.beta}</b></div>
+      <div class="mc-sample" id="sp-${i}"></div>
+    </div>`;
+  }).join('');
+}
+
+function updateCols(winIdx, samples) {
+  MODELS.forEach((m,i) => {
+    const card = document.getElementById(`mc-${i}`);
+    card.classList.toggle('winner', i===winIdx);
+    const mean = m.alpha/(m.alpha+m.beta);
+    document.getElementById(`bar-${i}`).style.width = (mean*100)+'%';
+    document.getElementById(`rq-${i}`).textContent  = m.requests;
+    document.getElementById(`sc-${i}`).textContent  = m.successes;
+    document.getElementById(`mn-${i}`).textContent  = (mean*100).toFixed(1)+'%';
+    document.getElementById(`ab-${i}`).textContent  = `${m.alpha} / ${m.beta}`;
+    if (samples) {
+      const el = document.getElementById(`sp-${i}`);
+      el.textContent = `sampled: ${(samples[i]*100).toFixed(3)}%${i===winIdx?' ✓':''}`;
+      el.style.color = i===winIdx ? '#a78bfa' : '#8a9ab8';
+    }
+  });
+}
+
+// ── ROUTE ONE REQUEST ─────────────────────────────────────────────────────────
+function routeOne() {
+  const samples = MODELS.map(m => betaSample(m.alpha, m.beta));
+  const winIdx  = samples.indexOf(Math.max(...samples));
+  const winner  = MODELS[winIdx];
+  winner.requests++;
+  const success = Math.random() < winner.trueRate;
+  if (success) { winner.successes++; winner.alpha++; } else { winner.beta++; }
+  totalReqs++;
+  routeHistory.push(winIdx);
+  if (routeHistory.length > 200) routeHistory.shift();
+  convergHist.push(MODELS.map(m => m.alpha/(m.alpha+m.beta)));
+  if (convergHist.length > 150) convergHist.shift();
+  updateCols(winIdx, samples);
+  drawRouting();
+  drawConverge();
+  addLog(winIdx, success, samples);
+}
+
+// ── LOGGING ──────────────────────────────────────────────────────────────────
+function addLog(winIdx, success, samples) {
+  const box = document.getElementById('logBox');
+  const n   = String(totalReqs).padStart(4);
+  const s   = samples.map((v,i)=>`${MODELS[i].id}:${(v*100).toFixed(2)}%`).join(' ');
+  const div = document.createElement('div');
+  div.className = success ? 'log-win' : '';
+  div.textContent = `[${n}] ${success?'✓':'✗'} → ${MODELS[winIdx].name}  [${s}]`;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  if (box.children.length > 100) box.removeChild(box.firstChild);
+}
+function addInfoLog(msg) {
+  const box = document.getElementById('logBox');
+  const div = document.createElement('div');
+  div.className = 'log-info'; div.textContent = msg;
+  box.appendChild(div); box.scrollTop = box.scrollHeight;
+}
+
+// ── CANVAS: ROUTING DISTRIBUTION ─────────────────────────────────────────────
+function drawRouting() {
+  const canvas = document.getElementById('canvasRouting');
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.clientWidth||canvas.width, H = 150;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#090d14';
+  ctx.fillRect(0,0,W,H);
+
+  if (!routeHistory.length) {
+    ctx.fillStyle='#8a9ab8'; ctx.font='12px JetBrains Mono,monospace';
+    ctx.textAlign='center'; ctx.fillText('No data yet', W/2, H/2); return;
+  }
+  const counts = [0,0,0];
+  routeHistory.forEach(i => counts[i]++);
+  const total = routeHistory.length;
+  const padL=36, padR=12, padT=12, padB=34;
+  const cW = W-padL-padR, cH = H-padT-padB;
+  const bW = (cW-16)/3;
+
+  MODELS.forEach((m,i) => {
+    const frac = counts[i]/total;
+    const bH = frac*cH;
+    const x = padL + i*(bW+8);
+    const y = padT+cH-bH;
+    const g = ctx.createLinearGradient(0,y,0,y+bH);
+    g.addColorStop(0, m.color); g.addColorStop(1, m.color+'44');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(x,y,bW,bH,[4,4,0,0]);
+    else ctx.rect(x,y,bW,bH);
+    ctx.fill();
+    ctx.fillStyle='#e8edf5'; ctx.font='600 12px DM Sans,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(m.name, x+bW/2, H-padB+16);
+    ctx.fillStyle='#a78bfa'; ctx.font='11px JetBrains Mono,monospace';
+    ctx.fillText((frac*100).toFixed(1)+'%', x+bW/2, y-5);
+  });
+
+  // Y axis labels
+  [0,.5,1].forEach(f => {
+    const y2 = padT+(1-f)*cH;
+    ctx.fillStyle='#8a9ab8'; ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText((f*100).toFixed(0)+'%', padL-4, y2+3);
+    ctx.strokeStyle='rgba(138,154,184,0.08)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(padL,y2); ctx.lineTo(W-padR,y2); ctx.stroke();
+  });
+}
+
+// ── CANVAS: CONVERGENCE ───────────────────────────────────────────────────────
+function drawConverge() {
+  const canvas = document.getElementById('canvasConverge');
+  const dpr = window.devicePixelRatio||1;
+  const W = canvas.clientWidth||canvas.width, H = 150;
+  canvas.width = W*dpr; canvas.height = H*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.fillStyle = '#090d14';
+  ctx.fillRect(0,0,W,H);
+
+  const padL=36, padR=14, padT=12, padB=28;
+  const cW = W-padL-padR, cH = H-padT-padB;
+
+  // Grid
+  [0,.25,.5,.75,1].forEach(f => {
+    const y = padT+(1-f)*cH;
+    ctx.fillStyle='#8a9ab8'; ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText((f*100).toFixed(0)+'%', padL-4, y+3);
+    ctx.strokeStyle='rgba(138,154,184,0.08)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+  });
+
+  if (convergHist.length < 2) {
+    ctx.fillStyle='#8a9ab8'; ctx.font='12px JetBrains Mono,monospace';
+    ctx.textAlign='center'; ctx.fillText('No data yet', W/2, H/2); return;
+  }
+
+  const n = convergHist.length;
+  MODELS.forEach((m,mi) => {
+    ctx.beginPath(); ctx.strokeStyle=m.color; ctx.lineWidth=1.5; ctx.lineJoin='round';
+    convergHist.forEach((snap,t) => {
+      const x = padL + (t/(n-1))*cW;
+      const y = padT + (1-snap[mi])*cH;
+      t===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // endpoint dot
+    const last = convergHist[n-1][mi];
+    ctx.beginPath();
+    ctx.arc(padL+cW, padT+(1-last)*cH, 3, 0, Math.PI*2);
+    ctx.fillStyle=m.color; ctx.fill();
+  });
+
+  // Legend
+  MODELS.forEach((m,i) => {
+    const lx = padL+4+i*50;
+    ctx.fillStyle=m.color; ctx.fillRect(lx, H-padB+8, 10, 3);
+    ctx.fillStyle='#8a9ab8'; ctx.font='10px JetBrains Mono,monospace'; ctx.textAlign='left';
+    ctx.fillText(m.name, lx+13, H-padB+12);
+  });
+}
+
+// ── AUTO RUN ──────────────────────────────────────────────────────────────────
+async function autoRun(count) {
+  autoRunning = true;
+  document.getElementById('btnRoute').disabled = true;
+  document.getElementById('btnAuto').disabled  = true;
+  addInfoLog(`// Auto-run: ${count} requests starting...`);
+  for (let i=0; i<count && autoRunning; i++) {
+    routeOne();
+    if (i%15===14) await new Promise(r=>setTimeout(r,16));
+  }
+  addInfoLog(`// Auto-run complete. Total: ${totalReqs} requests.`);
+  autoRunning = false;
+  document.getElementById('btnRoute').disabled = false;
+  document.getElementById('btnAuto').disabled  = false;
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────────
+function resetAll() {
+  autoRunning = false;
+  MODELS.forEach(m => { m.alpha=1; m.beta=1; m.requests=0; m.successes=0; });
+  routeHistory=[]; convergHist=[]; totalReqs=0;
+  renderCols(); drawRouting(); drawConverge();
+  document.getElementById('logBox').innerHTML =
+    '<div class="log-info">// Reset complete. Beta(1,1) priors restored.</div>';
+  document.getElementById('btnRoute').disabled = false;
+  document.getElementById('btnAuto').disabled  = false;
+}
+
+// ── RENDER ALGO CARDS ─────────────────────────────────────────────────────────
+function renderAlgos() {
+  document.getElementById('algoGrid').innerHTML = ALGORITHMS.map((a,i) => `
+    <div class="algo-card reveal" style="transition-delay:${(i%5)*0.07}s">
+      <div class="algo-hdr">
+        <div class="algo-icon">${a.icon}</div>
+        <div><div class="algo-name">${a.name}</div></div>
+      </div>
+      <div class="algo-desc">${a.desc}</div>
+      <span class="algo-ref">${a.ref}</span>
+    </div>`).join('');
+}
+
+// ── RENDER MODULE GRID ────────────────────────────────────────────────────────
+function renderModules() {
+  document.getElementById('moduleGrid').innerHTML = MODULES.map((m,i) => `
+    <div class="module-card reveal" style="transition-delay:${(i%5)*0.06}s">
+      <div class="mod-icon">${m.icon}</div>
+      <div class="mod-name">${m.name}</div>
+      <div class="mod-pkg">${m.pkg}</div>
+      <div class="mod-tests">${m.tests} tests</div>
+    </div>`).join('');
+}
+
+// ── INTERSECTION OBSERVER ─────────────────────────────────────────────────────
+function initReveal() {
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }});
+  }, { threshold:.1, rootMargin:'0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  renderCols();
+  renderAlgos();
+  renderModules();
+  requestAnimationFrame(() => { drawRouting(); drawConverge(); initReveal(); });
+
+  document.getElementById('btnRoute').addEventListener('click', routeOne);
+  document.getElementById('btnAuto').addEventListener('click', () => autoRun(100));
+  document.getElementById('btnReset').addEventListener('click', resetAll);
+  window.addEventListener('resize', () => { drawRouting(); drawConverge(); });
+});
+</script>
+</body>
+</html>
