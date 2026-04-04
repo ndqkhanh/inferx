@@ -2,7 +2,7 @@
 
 A distributed AI model-serving gateway with adaptive multi-armed bandit routing, embedded stream processing for real-time feature computation, and SLO-aware deadline scheduling — built from scratch in Java 21 with zero external dependencies.
 
-**190 tests, 0 failures** across all 10 modules.
+**187 tests, 0 failures** across all 10 modules.
 
 ---
 
@@ -100,13 +100,13 @@ Delta-of-delta encoding for timestamps + XOR with leading/trailing zero compress
 
 - **Java 21** — records, sealed interfaces, pattern matching, virtual threads
 - **Zero external dependencies** — all algorithms implemented from scratch
-- **JUnit 5 + AssertJ** — 149 tests, 0 failures
+- **JUnit 5 + AssertJ** — 187 tests, 0 failures
 - **Gradle 8.10** — Kotlin DSL, version catalog
 
 ## Build & Test
 
 ```bash
-./gradlew test          # Run all 190 tests
+./gradlew test          # Run all 187 tests
 ./gradlew :router:test  # Test only the router module
 ./gradlew :stream:test  # Test only the stream module
 ```
@@ -150,6 +150,15 @@ This project prepares answers for 10 system design interview questions:
 | FlashCache | Feature cache, routing table cache |
 | AgentForge | Consumer — LLM providers become InferX backends |
 | VectorForge | Embedding model serving, semantic cache |
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/architecture.md) | System design, module dependencies, data flows |
+| [API Reference](docs/api.md) | All public types, method signatures, usage |
+| [Benchmarks](docs/benchmarks.md) | Performance characteristics, compression ratios, latency |
+| [Operations](docs/operations.md) | Build, configuration, monitoring, troubleshooting |
 
 ## License
 
